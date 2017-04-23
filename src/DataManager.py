@@ -19,17 +19,17 @@ class DataManager(object):
         self.retrieved_data = retrieved_data
         self.lang_codes_file = lang_codes_file
 
-    def initialize(self, splits=(0.60, 0.20, 0.20)):
+    def initialize(self, splits=(0.60, 0.20, 0.20), shuffle=True):
         if self.initialized:
             return
         self.lang_codes = self._load_lang_codes()
         self.tweet_labels, self.canonical_inv_idx = \
             self._load_tweet_labels()
         self.tweet_text, self.hydrated_inv_idx = self._load_tweet_text()
-        self._split_dataset(splits)
+        self._split_dataset(splits, shuffle)
         self.initialized = True
 
-    def _split_dataset(self, splits):
+    def _split_dataset(self, splits, shuffle):
         if type(splits) not in [list, tuple] or len(splits) != 3:
             err_msg = 'splits should be collection (list or tuple) of length 3'
             raise DataError(err_msg)
@@ -38,6 +38,8 @@ class DataManager(object):
 
         # percentage_split() code source: http://bit.ly/2buzsDm
         def percentage_split(seq, percentages):
+            if shuffle:
+                np.random.shuffle(seq)
             cdf = np.cumsum(percentages)
             stops = map(int, cdf * len(seq))
             return [seq[a:b] for a, b in zip([0] + stops, stops)]
@@ -97,17 +99,17 @@ class DataManager(object):
     def training_data(self):
         if not self.initialized:
             raise DataError('Must call initialize() first')
-        return self.X_train, self.y_train
+        return self.X_train[:], self.y_train[:]
 
     def dev_data(self):
         if not self.initialized:
             raise DataError('Must call initialize() first')
-        return self.X_dev, self.y_dev
+        return self.X_dev[:], self.y_dev[:]
 
     def test_data(self):
         if not self.initialized:
             raise DataError('Must call initialize() first')
-        return self.X_test, self.y_test
+        return self.X_test[:], self.y_test[:]
 
     def hydrated_diff(self):
         if not self.initialized:
@@ -120,7 +122,7 @@ class DataManager(object):
                 diff = None
             print('{}: {}'.format(lang, diff))
 
-'''
+    '''
     def filter_by_lang(self, langs, to_exclude=False):
         if not isinstance(langs, set):
             langs = set(langs)
@@ -129,4 +131,4 @@ class DataManager(object):
 
     def get_inverted_index(self, tweet_text):
         return
-'''
+    '''
