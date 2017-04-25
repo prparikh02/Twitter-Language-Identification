@@ -28,6 +28,7 @@ class Experiment(object):
         self.shuffle = shuffle
         self.seed = seed
         self.initialized = False
+        self.validated = False
 
     def initialize(self):
         '''materialize the training data, dev data and test data as matrices'''
@@ -48,7 +49,8 @@ class Experiment(object):
 
     def _filter(self):
         '''
-        The order of the list of operations matters! Filtering will remove data!
+        The order of the list of operations matters!
+        Filtering will remove data!
         '''
         for op in self.filtering_operations:
             if isinstance(op, tuple):
@@ -81,7 +83,6 @@ class Experiment(object):
             f(self.X_dev_text, self.y_dev_text, **args)
             f(self.X_test_text, self.y_test_text, **args)
 
-
     def _extract_features(self):
         '''
         Vectorizer should return NxM matrix where N is number of samples and
@@ -111,7 +112,6 @@ class Experiment(object):
         self.y_train = [self.y_train[i] for i in p]
         self.y_train_text = [self.y_train_text[i] for i in p]
 
-    
     def fit_and_validate(self):
         '''train the classifier and assess predictions on dev data'''
         if not self.initialized:
@@ -120,6 +120,18 @@ class Experiment(object):
         self.dev_predictions = self.classifier.predict(self.X_dev)
         self.dev_accuracy = \
             sklearn.metrics.accuracy_score(self.y_dev, self.dev_predictions)
+        self.validated = True
+
+    def test_results(self):
+        ''' Get results from testing data '''
+        if not self.initialized:
+            self.initialize()
+            self.fit_and_validate()
+        if not self.validated:
+            self.fit_and_validate()
+        self.test_predictions = self.classifier.predict(self.X_test)
+        self.test_accuracy = \
+            sklearn.metrics.accuracy_score(self.y_test, self.test_predictions)
 
     '''
     @classmethod
