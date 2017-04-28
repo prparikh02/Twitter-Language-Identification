@@ -53,9 +53,28 @@ def remove_punctutation(X, y):
     return X, y
 
 
+def remove_digits(X, y):
+    for idx, text in enumerate(X):
+        X[idx] = text.translate(None, string.digits)
+    return X, y
+
+
+def remove_html_garbage(X, y):
+    filt = [r'&lt', r'&gt;', r'&amp;']
+    for idx, text in enumerate(X):
+        for f in filt:
+            text = text.replace(f, '')
+        X[idx] = text
+    return X, y
+
+
 def remove_emojis(X, y, emojis):
     for idx, x in enumerate(X):
         for emoji in emojis:
             x = x.replace(emoji, '')
         X[idx] = x
     return X, y
+
+
+def truncate(X, y, trunc_length=140):
+    return [text[:trunc_length] for text in X], y

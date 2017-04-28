@@ -1,5 +1,7 @@
 import numpy as np
+import scipy.sparse as ss
 import sklearn.linear_model
+from sklearn.exceptions import NotFittedError
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
@@ -14,11 +16,10 @@ class Experiment(object):
                  data_manager,
                  classifier,
                  cleaning_operations,
-                 filter_operations,
+                 filtering_operations,
                  vectorizer,
                  shuffle=False,
                  seed=None):
-        # TODO: Change name/defaults of some of these parameters
         '''set up the problem of learning a classifier from a data manager'''
         self.data_manager = data_manager
         self.classifier = classifier
@@ -88,12 +89,15 @@ class Experiment(object):
         Vectorizer should return NxM matrix where N is number of samples and
             M is number of features (dimension)
         '''
-        self.X_train = self.vectorizer.fit_transform(self.X_train_text)
+        try:
+            self.X_train = self.vectorizer.transform(self.X_train_text)
+            print('Using vectorizer fitted elsewhere')
+        except NotFittedError:
+            self.X_train = self.vectorizer.fit_transform(self.X_train_text)
         self.X_dev = self.vectorizer.transform(self.X_dev_text)
         self.X_test = self.vectorizer.transform(self.X_test_text)
 
         # TODO: Ensure no zero vectors or any funny business
-        # TODO: convert labels to integers and maintain a mapping
         S = list(set(self.y_train_text + self.y_dev_text + self.y_test_text))
         self.lang_to_num = dict(zip(S, range(len(S))))
         self.num_to_lang = {v: k for k, v in self.lang_to_num.iteritems()}
@@ -112,11 +116,37 @@ class Experiment(object):
         self.y_train = [self.y_train[i] for i in p]
         self.y_train_text = [self.y_train_text[i] for i in p]
 
+    def stack_features(self, vectorizers):
+        if not self.initialized:
+            self.initialize()
+        for vec in vectorizers:
+            s = 'Number of features {} stacking: {}'
+            print(s.format('before', self.X_train.shape[1]))
+            try:
+                self.X_train = \
+                    ss.hstack([self.X_train,
+                               vec.transform(self.X_train_text)])
+                print('Using vectorizer fitted elsewhere')
+            except NotFittedError:
+                self.X_train = \
+                    ss.hstack([self.X_train,
+                               vec.fit_transform(self.X_train_text)])
+            self.X_dev = \
+                ss.hstack([self.X_dev, vec.transform(self.X_dev_text)])
+            self.X_test = \
+                ss.hstack([self.X_test, vec.transform(self.X_test_text)])
+            print(s.format('after', self.X_train.shape[1]))
+
     def fit_and_validate(self):
         '''train the classifier and assess predictions on dev data'''
         if not self.initialized:
             self.initialize()
-        self.classifier.fit(self.X_train, self.y_train)
+        if (not hasattr(self.classifier, 'coef_') or
+                self.classifier.coef_ is None):
+            self.classifier.fit(self.X_train, self.y_train)
+        else:
+            print('Using classifier fitted elsewhere')
+
         self.dev_predictions = self.classifier.predict(self.X_dev)
         self.dev_accuracy = \
             sklearn.metrics.accuracy_score(self.y_dev, self.dev_predictions)
@@ -132,17 +162,3 @@ class Experiment(object):
         self.test_predictions = self.classifier.predict(self.X_test)
         self.test_accuracy = \
             sklearn.metrics.accuracy_score(self.y_test, self.test_predictions)
-
-    '''
-    @classmethod
-    def transform(cls, expt, operation, classifier):
-        'use operations to transform the data and set up new expt'
-        if not expt.initialized:
-            expt.initialize()
-        result = cls(expt.data, classifier)
-        result.X_train, result.y_train = operation(expt.X_train, expt.y_train)
-        result.X_dev, result.y_dev = operation(expt.X_dev, expt.y_dev)
-        result.X_test, result.y_test = operation(expt.X_test, expt.y_test)
-        result.initialized = True
-        return result
-    '''

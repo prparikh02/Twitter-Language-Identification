@@ -121,14 +121,3 @@ class DataManager(object):
             except KeyError:
                 diff = None
             print('{}: {}'.format(lang, diff))
-
-    '''
-    def filter_by_lang(self, langs, to_exclude=False):
-        if not isinstance(langs, set):
-            langs = set(langs)
-        if to_exclude:
-            langs = self.lang_codes - langs
-
-    def get_inverted_index(self, tweet_text):
-        return
-    '''
