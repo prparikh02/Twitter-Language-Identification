@@ -8,7 +8,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 class Experiment(object):
     '''
     Organize the process of getting data, building a classifier,
-    and exploring new representations. Modified from and credit to:
+    and exploring new representations. Experiment class pattern credit to:
     Matthew Stone, CS 533, Spring 2017 - Classifier Patterns
     '''
 
