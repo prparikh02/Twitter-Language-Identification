@@ -137,6 +137,11 @@ class Experiment(object):
                 ss.hstack([self.X_test, vec.transform(self.X_test_text)])
             print(s.format('after', self.X_train.shape[1]))
 
+    def set_classifier(self, classifier):
+        if self.validated:
+            self.validated = False
+        self.classifier = classifier
+
     def fit_and_validate(self):
         '''train the classifier and assess predictions on dev data'''
         if not self.initialized:

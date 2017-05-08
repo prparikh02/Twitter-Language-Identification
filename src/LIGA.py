@@ -120,7 +120,7 @@ class LIGA(object):
             # already decoded
             pass
         self.counter = {}
-        for l in y:
+        for l in self.y_train:
             if l not in self.counter:
                 self.counter[l] = {'vertices': 0, 'edges': 0}
         self.initialized = True
