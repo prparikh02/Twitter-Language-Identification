@@ -3,3 +3,6 @@
 *.pyc
 report_considerations.txt
 report/
+
+.vscode/
+venv/
